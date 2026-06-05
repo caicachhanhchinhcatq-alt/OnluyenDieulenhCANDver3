@@ -127,6 +127,35 @@
     .copyright-box { margin-top: 30px; padding-top: 15px; border-top: 1px dashed #ccc; font-size: 13px; color: #555; line-height: 1.6; text-align: center; background: rgba(250, 250, 250, 0.9); border-radius: 6px; padding: 10px; }
     .copyright-title { font-weight: bold; color: var(--primary-color); }
 
+    /* --- ĐỊNH DẠNG DÒNG THỜI GIAN VÀ ÂM THANH CÙNG HÀNG --- */
+    .timer-audio-row {
+        display: flex;
+        justify-content: space-between; /* Đẩy thời gian sang trái, nút âm thanh sang phải */
+        align-items: center;            /* Căn hai thành phần thẳng hàng trục dọc */
+        margin-bottom: 15px;            /* Tạo khoảng cách thông thoáng với thanh tiến độ phía dưới */
+        background: rgba(245, 245, 245, 0.8); /* Tạo nền nhẹ phía sau giúp phần đầu nổi bật */
+        padding: 6px 12px;
+        border-radius: 8px;
+    }
+
+    #timer {
+        font-weight: bold;
+        color: var(--primary-color);
+        font-size: 17px;
+        margin-bottom: 0 !important; /* Triệt tiêu khoảng cách cũ để thẳng hàng */
+    }
+
+    #audio-toggle-btn {
+        margin: 0 !important;           /* Triệt tiêu khoảng cách thừa */
+        padding: 6px 14px !important;   /* Thu gọn nút nhỏ nhắn, thanh lịch */
+        font-size: 13px !important;     /* Cỡ chữ tinh tế */
+        background-color: #616161;      /* Màu xám sang trọng mặc định */
+        border-radius: 20px !important; /* Bo tròn dạng viên thuốc cực kỳ hiện đại */
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }	
+
+
+
     @media (max-width: 480px) {
         body { padding: 8px; }
         .container { padding: 15px; border-radius: 8px; }
@@ -230,7 +259,11 @@
     </div>
 
     <div id="quiz-screen" class="hidden">
-	<div id="timer" style="font-weight: bold; color: var(--primary-color); margin-bottom: 10px; font-size: 16px;">Thời gian: 10:00</div>
+	<div class="timer-audio-row">
+            <div id="timer">Thời gian: 10:00</div>
+            <button id="audio-toggle-btn" onclick="toggleAudio()">🔊 ÂM THANH: BẬT</button>
+        </div>     
+
         <div class="progress-container">
             <div id="progress"></div>
             <div id="progress-text" class="progress-text-overlay"></div>
@@ -259,29 +292,45 @@
     </div>
 </div>
 
-<script>
+<script> 
     let currentQuiz = [];
     let currentIndex = 0;
     let score = 0;
     let userSelected = null;
-	let timerInterval;
-	let timeLeft;
+    let timerInterval;
+    let timeLeft;
+    let isAudioMuted = false; // <-- Khai báo biến cốt lõi cho hệ thống bật/tắt âm thanh
 
-    document.getElementById('password').addEventListener('keypress', function(e) {
+        document.getElementById('password').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') login();
     });
+
+    function toggleAudio() {
+        isAudioMuted = !isAudioMuted;
+        const btn = document.getElementById('audio-toggle-btn');
+        if (isAudioMuted) {
+            btn.innerText = "🔇 ÂM THANH: TẮT";
+            btn.style.backgroundColor = "#9e9e9e"; // Chuyển sang màu xám nhạt báo hiệu ẩn tiếng
+        } else {
+            btn.innerText = "🔊 ÂM THANH: BẬT";
+            btn.style.backgroundColor = "#616161"; // Trở về màu xám đậm ban đầu
+        }
+    }
+
 
     function login() {
         const user = document.getElementById('username').value.trim();
         const pass = document.getElementById('password').value;
 
         if (user === 'tmtq' && pass === 'tmtq') {
-            // Chủ động kích hoạt nạp và giải mã sẵn âm thanh ngay khi vào phần mềm
+            // Bọc an toàn để nếu lỗi âm thanh thì app vẫn chạy tiếp vào phòng thi bình thường
             try {
                 document.getElementById('sound-correct').load();
                 document.getElementById('sound-wrong').load();
                 document.getElementById('sound-timeout').load();
-            } catch(e) { console.log(e); }
+            } catch(e) { 
+                console.log("Chưa tìm thấy thẻ âm thanh, hệ thống bỏ qua để vào thi:", e); 
+            }
             
             startQuiz();
         } else {
@@ -319,7 +368,7 @@
         
         if (timeLeft <= 0) {
             clearInterval(timerInterval);
-            document.getElementById('sound-timeout').play();
+            if (!isAudioMuted) document.getElementById('sound-timeout').play();
             alert("Đã hết thời gian làm bài!");
             showResult(); // Tự động khóa và hiện kết quả khi hết giờ
         }
@@ -399,7 +448,7 @@
 
         if (userSelected === correctAns) {
             score++;
-            document.getElementById('sound-correct').play();
+            if (!isAudioMuted) document.getElementById('sound-correct').play();
             feedback.innerText = "✓ CHÍNH XÁC!";
             feedback.className = "result-msg correct-banner";
             
@@ -409,7 +458,7 @@
                 }
             });
         } else {
-            document.getElementById('sound-wrong').play();
+            if (!isAudioMuted) document.getElementById('sound-wrong').play();
             feedback.innerText = "✘ SAI RỒI!\n• Đồng chí chú ý đáp án màu xanh lá cây trên màn hình.";
             feedback.className = "result-msg wrong-banner";
             
@@ -467,7 +516,18 @@
         }
     }
 
-    function restartQuiz() {
+   function restartQuiz() {
+        // 1. Reset trạng thái biến về mặc định là BẬT âm thanh khi sang lượt thi mới
+        isAudioMuted = false;
+        
+        // 2. Cập nhật lại giao diện nút bấm về trạng thái BẬT ban đầu
+        const toggleBtn = document.getElementById('audio-toggle-btn');
+        if (toggleBtn) {
+            toggleBtn.innerText = "🔊 ÂM THANH: BẬT";
+            toggleBtn.style.backgroundColor = "#616161"; // Trở lại màu xám đậm mặc định
+        }
+
+        // 3. Giữ nguyên khối lệnh nạp sẵn âm thanh và lệnh bắt đầu thi cũ của anh
         try {
             document.getElementById('sound-correct').load();
             document.getElementById('sound-wrong').load();
@@ -479,10 +539,9 @@
 
 </script>
 
-     <audio id="sound-correct" src="sound-Dung.mp3" preload="auto" autobuffer></audio>
+    <audio id="sound-correct" src="sound-Dung.mp3" preload="auto" autobuffer></audio>
     <audio id="sound-wrong" src="sound-Sai.mp3" preload="auto" autobuffer></audio>
-    <audio id="sound-timeout" src="sound-timeout.mp3" preload="auto" autobuffer></audio>>
-
+    <audio id="sound-timeout" src="sound-timeout.mp3" preload="auto" autobuffer></audio>
 
 </body>
 </html>
