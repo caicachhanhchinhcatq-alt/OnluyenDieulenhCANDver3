@@ -276,6 +276,13 @@
         const pass = document.getElementById('password').value;
 
         if (user === 'tmtq' && pass === 'tmtq') {
+            // Chủ động kích hoạt nạp và giải mã sẵn âm thanh ngay khi vào phần mềm
+            try {
+                document.getElementById('sound-correct').load();
+                document.getElementById('sound-wrong').load();
+                document.getElementById('sound-timeout').load();
+            } catch(e) { console.log(e); }
+            
             startQuiz();
         } else {
             alert('Tên đăng nhập hoặc Mật khẩu không chính xác!');
@@ -461,14 +468,20 @@
     }
 
     function restartQuiz() {
+        try {
+            document.getElementById('sound-correct').load();
+            document.getElementById('sound-wrong').load();
+            document.getElementById('sound-timeout').load();
+        } catch(e) { console.log(e); }
+        
         startQuiz();
     }
 
 </script>
 
-     <audio id="sound-correct" src="https://assets.mixkit.co/active_storage/sfx/2000/2000-84.wav" preload="auto"></audio>
-    <audio id="sound-wrong" src="https://assets.mixkit.co/active_storage/sfx/2955/2955-84.wav" preload="auto"></audio>
-    <audio id="sound-timeout" src="https://assets.mixkit.co/active_storage/sfx/911/911-84.wav" preload="auto"></audio>
+     <audio id="sound-correct" src="sound-Dung.mp3" preload="auto" autobuffer></audio>
+    <audio id="sound-wrong" src="sound-Sai.mp3" preload="auto" autobuffer></audio>
+    <audio id="sound-timeout" src="sound-timeout.mp3" preload="auto" autobuffer></audio>>
 
 
 </body>
